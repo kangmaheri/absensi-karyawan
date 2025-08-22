@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Employee;
+use App\Models\Attendance;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,5 +21,12 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+
+        // Buat 10 karyawan masing-masing dengan absensi
+        Employee::factory(10)
+            ->has(Attendance::factory()->count(5)) // setiap karyawan punya 5 absensi
+            ->create();
+
     }
 }
