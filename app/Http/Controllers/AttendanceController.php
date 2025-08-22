@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
@@ -11,7 +12,7 @@ class AttendanceController extends Controller
      */
     public function index()
     {
-        //
+      return response()->json(Attendance::with('employee')->get());
     }
 
     /**
@@ -27,15 +28,24 @@ class AttendanceController extends Controller
      */
     public function store(Request $request)
     {
-        //
+      $data = $request->validate([
+        'employee_id' => 'required|exists:employees,id',
+        'check_in' => 'nullable|date',
+        'check_out' => 'nullable|date',
+        'status' => 'required|string',
+      ]);
+
+      $attendance = Attendance::create($data);
+
+      return response()->json($attendance, 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Attendance $attendance)
     {
-        //
+        return response()->json($attendance->load('employee'));
     }
 
     /**
@@ -49,16 +59,27 @@ class AttendanceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Attendance $attendance)
     {
-        //
+      $data = $request->validate([
+        'employee_id' => 'sometimes|exists:employees,id',
+        'check_in' => 'nullable|date',
+        'check_out' => 'nullable|date',
+        'status' => 'sometimes|string',
+      ]);
+
+      $attendance->update($data);
+
+      return response()->json($attendance);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Attendance $attendance)
     {
-        //
+        $attendance->delete();
+
+        return response()->json(['message' => 'Attendance deleted']);
     }
 }

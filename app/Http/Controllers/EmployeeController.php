@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\Employee;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
@@ -11,7 +11,7 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        //
+      return response()->json(Employee::all());
     }
 
     /**
@@ -19,7 +19,7 @@ class EmployeeController extends Controller
      */
     public function create()
     {
-        //
+      
     }
 
     /**
@@ -27,15 +27,22 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
-        //
+      $data = $request->validate([
+        'name' => 'required|string',
+        'email' => 'required|email|unique:employees,email',
+        'position' => 'nullable|string',
+      ]);
+
+      $employee = Employee::create($data);
+      return response()->json($employee, 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Employee $employee)
     {
-        //
+      return response()->json($employee);
     }
 
     /**
@@ -49,16 +56,25 @@ class EmployeeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Employee $employee)
     {
-        //
+      $data = $request->validate([
+        'name' => 'sometimes|required|string',
+        'email' => 'sometimes|required|email|unique:employees,email,' . $employee->id,
+        'position' => 'nullable|string',
+      ]);
+      $employee->update($data);
+
+      return response()->json($employee);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Employee $employee)
     {
-        //
+      $employee->delete();
+
+      return response()->json(['message' => 'Employee deleted']);
     }
 }
