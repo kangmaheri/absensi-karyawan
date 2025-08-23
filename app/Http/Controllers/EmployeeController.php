@@ -24,7 +24,7 @@ class EmployeeController extends Controller
      */
     public function create()
     {
-      
+      return Inertia::render('Employees/Create');
     }
 
     /**
@@ -32,14 +32,15 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
-      $data = $request->validate([
-        'name' => 'required|string',
-        'email' => 'required|email|unique:employees,email',
-        'position' => 'nullable|string',
+      $request->validate([
+        'name'     => 'required|string|max:255',
+        'email'    => 'required|email|unique:employees,email',
+        'position' => 'required|string|max:255',
       ]);
 
-      $employee = Employee::create($data);
-      return response()->json($employee, 201);
+      Employee::create($request->only('name','email','position'));
+
+      return redirect()->route('employees.index')->with('success', 'Karyawan ditambahkan');
     }
 
     /**
@@ -53,9 +54,11 @@ class EmployeeController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Employee $employee)
     {
-        //
+      return Inertia::render('Employees/Edit', [
+        'employee' => $employee
+      ]);
     }
 
     /**
@@ -63,14 +66,15 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, Employee $employee)
     {
-      $data = $request->validate([
-        'name' => 'sometimes|required|string',
-        'email' => 'sometimes|required|email|unique:employees,email,' . $employee->id,
-        'position' => 'nullable|string',
+      $request->validate([
+        'name'     => 'required|string|max:255',
+        'email'    => 'required|email|unique:employees,email,'.$employee->id,
+        'position' => 'required|string|max:255',
       ]);
-      $employee->update($data);
 
-      return response()->json($employee);
+      $employee->update($request->only('name','email','position'));
+
+      return redirect()->route('employees.index')->with('success', 'Karyawan diperbarui');
     }
 
     /**
@@ -80,6 +84,6 @@ class EmployeeController extends Controller
     {
       $employee->delete();
 
-      return response()->json(['message' => 'Employee deleted']);
+      return redirect()->route('employees.index')->with('success', 'Karyawan dihapus');
     }
 }
