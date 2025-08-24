@@ -2,6 +2,7 @@
 import { defineProps } from 'vue'
 import { getInitials, getAvatarColor } from '@/utils/employee'
 import { router } from '@inertiajs/vue3'
+import { showToast } from '@/app'
 
 interface Employee {
   id: number
@@ -15,8 +16,11 @@ const props = defineProps<{
 }>()
 
 function destroyEmployee(id: number) {
-  if (confirm('Yakin mau hapus karyawan ini?')) {
-    router.delete(`/employees/${id}`)
+  if (confirm('Yakin ingin menghapus karyawan ini?')) {
+    router.delete(`/employees/${id}`, {
+      onSuccess: () => showToast('success', 'Karyawan berhasil dihapus 🗑️'),
+      onError: () => showToast('error', 'Gagal menghapus karyawan ⚠️'),
+    })
   }
 }
 </script>

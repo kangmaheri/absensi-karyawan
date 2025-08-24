@@ -2,6 +2,7 @@
 import { defineProps, reactive } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { getInitials, getAvatarColor } from '@/utils/employee'
+import { showToast } from '@/app'
 
 interface Employee {
   id: number
@@ -19,7 +20,10 @@ const form = reactive({
 })
 
 function submit() {
-  router.put(`/employees/${props.employee.id}`, form)
+  router.put(`/employees/${props.employee.id}`, form, {
+    onSuccess: () => showToast('success', 'Data karyawan berhasil diupdate ✅'),
+    onError: () => showToast('error', 'Update gagal ⚠️'),
+  })
 }
 </script>
 

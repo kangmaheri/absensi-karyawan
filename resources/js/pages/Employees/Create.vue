@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import { router } from '@inertiajs/vue3'
+import { showToast } from '@/app'
 
 const form = reactive({
   name: '',
@@ -9,7 +10,10 @@ const form = reactive({
 })
 
 function submit() {
-  router.post('/employees', form)
+  router.post('/employees', form, {
+    onSuccess: () => showToast('success', 'Karyawan berhasil ditambahkan 🎉'),
+    onError: () => showToast('error', 'Gagal menambahkan karyawan ⚠️'),
+  })
 }
 </script>
 
