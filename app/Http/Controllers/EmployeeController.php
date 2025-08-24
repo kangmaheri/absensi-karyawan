@@ -48,7 +48,9 @@ class EmployeeController extends Controller
      */
     public function show(Employee $employee)
     {
-      return response()->json($employee);
+      return Inertia::render('Employees/Show', [
+        'employee' => $employee
+      ]);
     }
 
     /**
