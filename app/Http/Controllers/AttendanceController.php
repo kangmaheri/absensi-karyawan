@@ -4,16 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use Illuminate\Http\Request;
-
+use Inertia\Inertia;
 class AttendanceController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
-    {
-      return response()->json(Attendance::with('employee')->get());
-    }
+{
+    return Inertia::render('attendances/Index', [
+        'attendances' => Attendance::with('employee')->get(),
+    ]);
+}
 
     /**
      * Show the form for creating a new resource.
