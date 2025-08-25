@@ -21,7 +21,7 @@ class AttendanceFactory extends Factory
           'employee_id' => Employee::factory(), // otomatis buat karyawan
             'check_in'    => now(),
             'check_out'   => null,
-            'status'      => $this->faker->randomElement(['present','sick','leave']),
+            'status'      => $this->faker->randomElement(['Present','Permission','Sick','Absent']),
         ];
     }
 }

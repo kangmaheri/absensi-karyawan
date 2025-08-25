@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
 
         // Buat 10 karyawan masing-masing dengan absensi
         Employee::factory(10)
-            ->has(Attendance::factory()->count(5)) // setiap karyawan punya 5 absensi
+            ->has(Attendance::factory()->count(1)) // setiap karyawan punya 1 absensi
             ->create();
 
     }
