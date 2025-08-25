@@ -2,27 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Attendance;
+use App\Models\Employee;
 class AttendanceController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
-{
-    return Inertia::render('attendances/Index', [
+    {
+      return Inertia::render('attendances/Index', [
         'attendances' => Attendance::with('employee')->get(),
-    ]);
-}
+      ]);
+    }
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        //
+      return Inertia::render('attendances/Create', [
+        'employees' => Employee::all()
+      ]);
     }
 
     /**
@@ -30,16 +33,21 @@ class AttendanceController extends Controller
      */
     public function store(Request $request)
     {
+      // Validasi input
       $data = $request->validate([
         'employee_id' => 'required|exists:employees,id',
         'check_in' => 'nullable|date',
-        'check_out' => 'nullable|date',
-        'status' => 'required|string',
+        'check_out' => 'nullable|date|after_or_equal:check_in',
+        'status' => 'required|string|in:Present,Permission,Sick,Absent',
       ]);
 
+      // Buat record absensi
       $attendance = Attendance::create($data);
 
-      return response()->json($attendance, 201);
+      // Load relasi employee agar JSON lengkap
+      $attendance->load('employee');
+
+      return redirect()->route('attendances.index')->with('success', 'Attendance created successfully');
     }
 
     /**
@@ -47,15 +55,20 @@ class AttendanceController extends Controller
      */
     public function show(Attendance $attendance)
     {
-        return response()->json($attendance->load('employee'));
+      return Inertia::render('attendances/Show', [
+        'attendance' => $attendance->load('employee')
+      ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Attendance $attendance)
     {
-        //
+      return Inertia::render('attendances/Edit', [
+        'attendance' => $attendance,
+        'employees' => Employee::all(),
+      ]);
     }
 
     /**
@@ -63,16 +76,21 @@ class AttendanceController extends Controller
      */
     public function update(Request $request, Attendance $attendance)
     {
+      // Validasi input
       $data = $request->validate([
         'employee_id' => 'sometimes|exists:employees,id',
         'check_in' => 'nullable|date',
-        'check_out' => 'nullable|date',
-        'status' => 'sometimes|string',
+        'check_out' => 'nullable|date|after_or_equal:check_in',
+        'status' => 'sometimes|string|in:Present,Permission,Sick,Absent',
       ]);
 
+      // Update record
       $attendance->update($data);
 
-      return response()->json($attendance);
+      // Load relasi employee agar JSON lengkap
+      $attendance->load('employee');
+
+      return redirect()->route('attendances.index')->with('success', 'Attendance updated successfully');
     }
 
     /**
@@ -80,8 +98,12 @@ class AttendanceController extends Controller
      */
     public function destroy(Attendance $attendance)
     {
-        $attendance->delete();
+      // Simpan info sebelum dihapus (opsional)
+      $attendance->load('employee');
 
-        return response()->json(['message' => 'Attendance deleted']);
+      // Hapus record
+      $attendance->delete();
+
+      return redirect()->route('attendances.index')->with('success', 'Attendance deleted successfully');
     }
 }

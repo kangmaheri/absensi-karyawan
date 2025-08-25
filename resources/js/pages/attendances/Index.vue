@@ -1,11 +1,4 @@
 <script setup lang="ts">
-/**
- * Attendances Index
- * - Works with Inertia props (props.attendances) OR will fetch from /attendances
- * - Uses router.delete for remove (with toast)
- * - Uses getInitials/getAvatarColor from your utils (same as employees)
- */
-
 import { ref, onMounted } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { showToast } from '@/app'
@@ -37,7 +30,34 @@ const props = defineProps<{
 const loading = ref(false)
 const attendances = ref<Attendance[]>(props.attendances ? props.attendances : [])
 
-// if no prop provided, fetch from API endpoint
+// Mapping status backend -> frontend (Indonesia)
+const statusMap: Record<string, string> = {
+  Present: 'Hadir',
+  Permission: 'Izin',
+  Sick: 'Sakit',
+  Absent: 'Alpha',
+}
+
+function getStatusLabel(status?: string | null) {
+  if (!status) return '-'
+  return statusMap[status] ?? status // fallback kalau belum terdaftar
+}
+
+function getStatusClass(status?: string | null) {
+  switch (status) {
+    case 'Present':
+      return 'bg-green-100 text-green-800 border border-green-200'
+    case 'Permission':
+      return 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+    case 'Sick':
+      return 'bg-orange-100 text-orange-800 border border-orange-200'
+    case 'Absent':
+      return 'bg-red-100 text-red-800 border border-red-200'
+    default:
+      return 'bg-gray-100 text-gray-600 border border-gray-200'
+  }
+}
+
 async function loadAttendances() {
   if (props.attendances && props.attendances.length) return
   loading.value = true
@@ -46,19 +66,17 @@ async function loadAttendances() {
       method: 'GET',
       headers: { Accept: 'application/json' },
     })
-    if (!res.ok) throw new Error('Failed to load attendances')
+    if (!res.ok) throw new Error('Gagal memuat data absensi')
     const json = await res.json()
-    // expecting an array of attendance objects (controller returns JSON array)
     attendances.value = Array.isArray(json) ? json : (json.data ?? [])
   } catch (err) {
     console.error(err)
-    showToast('error', 'Failed to load attendances')
+    showToast('error', 'Gagal memuat data absensi')
   } finally {
     loading.value = false
   }
 }
 
-// helper: format date/time nicely (fallback safe)
 function formatDateTime(input?: string | null) {
   if (!input) return '-'
   const d = new Date(input)
@@ -79,23 +97,20 @@ function formatDate(input?: string | null) {
   return d.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-// delete attendance
 function destroyAttendance(id: number) {
-  if (!confirm('Yakin ingin menghapus attendance ini?')) return
+  if (!confirm('Yakin ingin menghapus absensi ini?')) return
 
-  // Use Inertia router.delete - this will work if your routes are set as resource routes
   router.delete(`/attendances/${id}`, {
     onSuccess: () => {
       attendances.value = attendances.value.filter(a => a.id !== id)
-      showToast('success', 'Attendance deleted')
+      showToast('success', 'Data absensi berhasil dihapus')
     },
     onError: () => {
-      showToast('error', 'Failed to delete attendance')
+      showToast('error', 'Gagal menghapus data absensi')
     },
   })
 }
 
-// initial load if needed
 onMounted(() => {
   loadAttendances()
 })
@@ -107,19 +122,23 @@ onMounted(() => {
       <!-- header -->
       <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Attendance Records</h1>
-          <p class="text-gray-600 mt-1">{{ attendances.length }} record(s)</p>
+          <h1 class="text-3xl font-bold text-gray-900">Data Absensi</h1>
+          <p class="text-gray-600 mt-1">{{ attendances.length }} data</p>
         </div>
         <div class="flex items-center gap-3">
-          <a href="/attendances/create" class="px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow hover:from-blue-700 hover:to-blue-600 transition">
-            ➕ New Attendance
+          <a href="/attendances/create"
+            class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-semibold flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Tambah Absensi
           </a>
         </div>
       </div>
 
       <!-- loading -->
       <div v-if="loading" class="max-w-7xl mx-auto text-center py-8 text-gray-500">
-        Loading attendances...
+        Sedang memuat data absensi...
       </div>
 
       <!-- table desktop -->
@@ -129,12 +148,12 @@ onMounted(() => {
             <table class="w-full min-w-[800px]">
               <thead>
                 <tr class="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                  <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Employee</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Date</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Check In</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Check Out</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Karyawan</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Tanggal</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Masuk</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Pulang</th>
                   <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Status</th>
-                  <th class="px-6 py-4 text-center text-sm font-semibold uppercase tracking-wider">Actions</th>
+                  <th class="px-6 py-4 text-center text-sm font-semibold uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
 
@@ -143,10 +162,10 @@ onMounted(() => {
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
                       <div :class="`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${getAvatarColor(att.employee?.name ?? String(att.employee_id))}`">
-                        {{ getInitials(att.employee?.name ?? ('E' + (att.employee_id ?? ''))) }}
+                        {{ getInitials(att.employee?.name ?? ('K' + (att.employee_id ?? ''))) }}
                       </div>
                       <div class="min-w-0">
-                        <div class="font-medium text-gray-900 truncate">{{ att.employee?.name ?? ('Employee #' + (att.employee_id ?? '-')) }}</div>
+                        <div class="font-medium text-gray-900 truncate">{{ att.employee?.name ?? ('Karyawan #' + (att.employee_id ?? '-')) }}</div>
                         <div class="text-xs text-gray-500 truncate">{{ att.employee?.position ?? '' }}</div>
                       </div>
                     </div>
@@ -167,26 +186,24 @@ onMounted(() => {
                   <td class="px-6 py-4">
                     <span
                       class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                      :class="att.status === 'Hadir' || att.status === 'Present' ? 'bg-green-100 text-green-800 border border-green-200'
-                      : att.status === 'Izin' || att.status === 'Permission' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                      : att.status === 'Sakit' || att.status === 'Sick' ? 'bg-orange-100 text-orange-800 border border-orange-200'
-                      : 'bg-red-100 text-red-800 border border-red-200'">
-                      {{ att.status ?? '-' }}
+                      :class="getStatusClass(att.status)"
+                    >
+                      {{ getStatusLabel(att.status) }}
                     </span>
                   </td>
 
                   <td class="px-6 py-4 text-center">
                     <div class="flex items-center justify-center gap-2">
-                      <a :href="`/attendances/${att.id}`" class="text-sm text-blue-600 hover:underline">Show</a>
-                      <a :href="`/attendances/${att.id}/edit`" class="text-sm text-yellow-600 hover:underline">Edit</a>
-                      <button @click="destroyAttendance(att.id)" class="text-sm text-red-600 hover:underline">Delete</button>
+                      <a :href="`/attendances/${att.id}`" class="text-sm text-blue-600 hover:underline">Detail</a>
+                      <a :href="`/attendances/${att.id}/edit`" class="text-sm text-yellow-600 hover:underline">Ubah</a>
+                      <button @click="destroyAttendance(att.id)" class="text-sm text-red-600 hover:underline">Hapus</button>
                     </div>
                   </td>
                 </tr>
 
                 <tr v-if="attendances.length === 0">
                   <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                    No attendance records found.
+                    Tidak ada data absensi.
                   </td>
                 </tr>
               </tbody>
@@ -195,43 +212,40 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- cards mobile / tablet -->
+      <!-- cards mobile -->
       <div v-if="!loading" class="grid gap-4 sm:grid-cols-2 lg:hidden">
         <div v-for="att in attendances" :key="att.id" class="group bg-white/80 backdrop-blur-lg rounded-2xl p-4 shadow-lg border border-white/20 hover:shadow-xl transition-all">
           <div class="flex items-start gap-4">
             <div :class="`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-lg ${getAvatarColor(att.employee?.name ?? String(att.employee_id))}`">
-              {{ getInitials(att.employee?.name ?? ('E' + (att.employee_id ?? ''))) }}
+              {{ getInitials(att.employee?.name ?? ('K' + (att.employee_id ?? ''))) }}
             </div>
 
             <div class="flex-1 min-w-0">
               <div class="flex justify-between mb-2">
-                <h3 class="text-lg font-semibold text-gray-900 truncate">{{ att.employee?.name ?? ('Employee #' + (att.employee_id ?? '-')) }}</h3>
+                <h3 class="text-lg font-semibold text-gray-900 truncate">{{ att.employee?.name ?? ('Karyawan #' + (att.employee_id ?? '-')) }}</h3>
                 <div class="text-xs text-gray-500">{{ formatDate(att.tanggal ?? att.check_in ?? att.created_at) }}</div>
               </div>
 
               <div class="space-y-2 text-sm text-gray-700">
                 <div>
-                  <div class="text-xs text-gray-500">Check In</div>
+                  <div class="text-xs text-gray-500">Masuk</div>
                   <div>{{ formatDateTime(att.check_in) }}</div>
                 </div>
                 <div>
-                  <div class="text-xs text-gray-500">Check Out</div>
+                  <div class="text-xs text-gray-500">Pulang</div>
                   <div>{{ formatDateTime(att.check_out) }}</div>
                 </div>
                 <div>
                   <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mt-2"
-                    :class="att.status === 'Hadir' || att.status === 'Present' ? 'bg-green-100 text-green-800 border border-green-200'
-                    : att.status === 'Izin' || att.status === 'Permission' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                    : att.status === 'Sakit' || att.status === 'Sick' ? 'bg-orange-100 text-orange-800 border border-orange-200'
-                    : 'bg-red-100 text-red-800 border border-red-200'">
-                    {{ att.status ?? '-' }}
+                    :class="getStatusClass(att.status)">
+                    {{ getStatusLabel(att.status) }}
                   </div>
                 </div>
 
                 <div class="flex justify-end gap-3 mt-3">
-                  <a :href="`/attendances/${att.id}`" class="text-blue-600 hover:underline">Show</a>
-                  <a :href="`/attendances/${att.id}/edit`" class="text-yellow-600 hover:underline">Edit</a>
-                  <button @click="destroyAttendance(att.id)" class="text-red-600 hover:underline">Delete</button>
+                  <a :href="`/attendances/${att.id}`" class="text-blue-600 hover:underline">Detail</a>
+                  <a :href="`/attendances/${att.id}/edit`" class="text-yellow-600 hover:underline">Ubah</a>
+                  <button @click="destroyAttendance(att.id)" class="text-red-600 hover:underline">Hapus</button>
                 </div>
               </div>
             </div>
@@ -239,7 +253,7 @@ onMounted(() => {
         </div>
 
         <div v-if="attendances.length === 0" class="col-span-full text-center text-gray-500 py-8">
-          No attendance records found.
+          Tidak ada data absensi.
         </div>
       </div>
     </div>
