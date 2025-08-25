@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import Layout from '@/layouts/Layout.vue'
 import { defineProps } from 'vue'
 import { getInitials, getAvatarColor } from '@/utils/employee'
+
+defineOptions({
+  layout: Layout,
+})
 
 interface Employee {
   id: number

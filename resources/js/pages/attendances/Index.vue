@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import Layout from '@/layouts/Layout.vue'
 import { ref, onMounted } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { showToast } from '@/app'
 import { getInitials, getAvatarColor } from '@/utils/employee'
+
+defineOptions({
+  layout: Layout,
+})
 
 interface Employee {
   id: number
